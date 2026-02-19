@@ -13,7 +13,9 @@ class Question(BaseModel):
     url:Annotated[str,Field(...,description="give the video id from the link")]
     que: Annotated[str,Field(...,description="Ask the question regarding the video link")]
 
-
+@app.get("/health")
+def health():
+    return {"status":"running"}
 
 # question1=question()
 
