@@ -3,7 +3,12 @@ from pydantic import BaseModel, Field
 from typing import Annotated
 from rag import ask_question
 
+
+
 app=FastAPI()
+@app.get("/")
+def home():
+    return {"message": "YouTube RAG API is running"}
 class Question(BaseModel):
     url:Annotated[str,Field(...,description="give the video id from the link")]
     que: Annotated[str,Field(...,description="Ask the question regarding the video link")]
