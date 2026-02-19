@@ -1,10 +1,9 @@
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings,HuggingFaceEndpoint,ChatHuggingFace
+
 from langchain_classic.retrievers import MultiQueryRetriever
 from langchain_classic.retrievers.document_compressors import LLMChainExtractor
 from langchain_classic.retrievers.contextual_compression import ContextualCompressionRetriever
@@ -21,8 +20,8 @@ load_dotenv() # loading the key from the .env file
 
 
 
-llm=ChatGoogleGenerativeAI(model="gemini-3-flash-preview",temperature=0.1)
-embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# llm=ChatGoogleGenerativeAI(model="gemini-3-flash-preview",temperature=0.1)
+
 splitter=RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=100)
 parser=StrOutputParser()
 
@@ -48,7 +47,6 @@ def get_script(url:str):
 
 def creat_chunks(transcript:str):
     docs=splitter.create_documents([transcript])
-    print(len(docs))
     return docs
 
 # transcript=get_script("YFjfBk8HI5o")
@@ -60,8 +58,6 @@ def creat_chunks(transcript:str):
 # get the query
 
 # query=input("enter the query")
-
-query="what is this video about"
 
 #retrieve the relevant documnet from the vectore store related to the query using multi query serach
 # creating the basse retriever multiQueryRetreiver
@@ -111,14 +107,18 @@ prompt=PromptTemplate(
 def ask_question(video_url,que):
     transcript=get_script(video_url)
     docs=creat_chunks(transcript)
-
+    embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    llm = HuggingFaceEndpoint(
+    repo_id="google/gemma-2b-it",
+    task="text-generation")
+    model=ChatHuggingFace(llm=llm)
     vector_store=FAISS.from_documents(documents=docs,embedding=embedding)
     retriever = vector_store.as_retriever(search_kwargs={"k": 5})
     docs1 = retriever.invoke(que)
     context = "\n\n".join([doc.page_content for doc in docs1])
-
-    chain = prompt | llm | parser
-    result = chain.invoke({"context": docs1, "question": que})
+    
+    chain = prompt | model | parser
+    result = chain.invoke({"context": context, "question": que})
 
     return result
 
