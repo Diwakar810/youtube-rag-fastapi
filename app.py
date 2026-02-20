@@ -1,7 +1,7 @@
 from fastapi import FastAPI,Path,Query
 from pydantic import BaseModel, Field
 from typing import Annotated
-from rag import ask_question
+from rag1 import ask_question
 
 
 
